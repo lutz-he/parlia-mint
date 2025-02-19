@@ -120,7 +120,7 @@ sneaky_bars = alt.Chart(filtered_data).mark_bar(size=2).encode(
     y=alt.Y('Probability:Q', axis=alt.Axis(title='Probability'), scale=alt.Scale(domain=[0, 1])),
     color='Topic:N',
     opacity=alt.Opacity('Probability:Q', scale=alt.Scale(domain=[0.5, 1], range=[0.01, 0.7]))
-)
+).interactive()
 
 sneaky_points = alt.Chart(filtered_data).mark_point(filled=True, size=50).encode(
     x=x_axis,
@@ -128,7 +128,7 @@ sneaky_points = alt.Chart(filtered_data).mark_point(filled=True, size=50).encode
     color='Topic:N',
     opacity=alt.Opacity('Probability:Q', scale=alt.Scale(domain=[0.5, 1], range=[0.01, 0.7]), legend=None),
     tooltip=['Date:T', 'Probability:Q', 'Topic:N']
-)
+).interactive()
 
 chart = sneaky_bars + sneaky_points
 
@@ -139,3 +139,5 @@ chart = chart.properties(
 
 st.altair_chart(chart, use_container_width=True)
 st.write(filtered_data)
+
+
