@@ -3,16 +3,22 @@ import tarfile
 from glob import glob
 import re
 import json
-import json
 import pandas as pd
 from tqdm import tqdm
 
-def create_subset(
-    tar_path="data/raw/ParlaMint-NL-en.ana.tgz", 
-    output_dir="data/raw/subset", 
-    folder_to_extract="ParlaMint-NL-en.txt", 
-    years=[2021, 2022]):
+def create_subset(tar_path="data/raw/ParlaMint-NL-en.ana.tgz", output_dir="data/raw/subset", folder_to_extract="ParlaMint-NL-en.txt", years=[2021, 2022]):
+    """
+    Create a subset of files from a tar archive for the specified years.
 
+    Args:
+        tar_path (str): Path to the tar archive.
+        output_dir (str): Directory to extract the subset files.
+        folder_to_extract (str): Folder inside the tar archive to extract.
+        years (list): List of years to extract.
+
+    Returns:
+        None
+    """
     # Ensure the output directory exists
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -32,9 +38,17 @@ def create_subset(
 
     print(f"Files from '{folder_to_extract}' for years {years} created in {output_dir}")
 
-
 def get_file_schema(path='data/raw/subset/ParlaMint-NL-en.txt/2022', outpath='data/processed/file_schema.json'):
+    """
+    Generate a file schema for the extracted files.
 
+    Args:
+        path (str): Path to the extracted files.
+        outpath (str): Path to save the file schema JSON.
+
+    Returns:
+        None
+    """
     files = glob(f'{path}*.txt') + glob(f'{path}*.tsv')
     text_ids = [os.path.basename(file).split('.')[0].replace('-meta', '') for file in files]
 
@@ -60,8 +74,16 @@ def get_file_schema(path='data/raw/subset/ParlaMint-NL-en.txt/2022', outpath='da
     with open(outpath, 'w') as f:
         json.dump(schema, f, indent=4)
 
-
 def preprocess_text_file(file_path):
+    """
+    Preprocess a text file to fix unclosed quotation marks.
+
+    Args:
+        file_path (str): Path to the text file.
+
+    Returns:
+        None
+    """
     with open(file_path, 'r', encoding='utf-8') as file:
         lines = file.readlines()
 
@@ -75,8 +97,18 @@ def preprocess_text_file(file_path):
     with open(file_path, 'w', encoding='utf-8') as file:
         file.writelines(fixed_lines)
 
-
 def collect_debate(base_name, file_schema, outdir='data/processed/debates/'):
+    """
+    Collect and concatenate debate text and metadata into a single document.
+
+    Args:
+        base_name (str): Base name of the debate file.
+        file_schema (dict): File schema dictionary.
+        outdir (str): Output directory to save the concatenated debate text.
+
+    Returns:
+        None
+    """
     txt_path = file_schema[base_name]['src_path_txt']
     tsv_path = file_schema[base_name]['src_path_tsv']
 
@@ -96,17 +128,13 @@ def collect_debate(base_name, file_schema, outdir='data/processed/debates/'):
     tsv_subset = tsv[['ID', 'Speaker_name', 'Speaker_party']]
     df_text = txt.merge(tsv_subset, left_on='Text_ID', right_on='ID', how='left').drop(columns='ID')
 
-    def conc_row(row, df = df_text):
+    def conc_row(row, df=df_text):
         """
-        Concatenates the text of a row with the speaker's name and party if it is the first row for that speaker,
-        otherwise returns only the text.
+        Concatenate the text of a row with the speaker's name and party if it is the first row for that speaker,
+        otherwise return only the text.
 
         Args:
-            row (pd.Series): A pandas Series representing a row of a DataFrame. The Series must contain the following columns:
-                - 'name': The index of the row.
-                - 'Speaker_name': The name of the speaker.
-                - 'Speaker_party': The party of the speaker.
-                - 'text': The text spoken by the speaker.
+            row (pd.Series): A pandas Series representing a row of a DataFrame.
 
         Returns:
             str: A string containing the speaker's name, party, and text if it is the first row for that speaker,
@@ -129,17 +157,34 @@ def collect_debate(base_name, file_schema, outdir='data/processed/debates/'):
     with open(outpath, 'w') as f:
         f.write(doc)
     
-    # add outpath to file_schema
+    # Add outpath to file_schema
     file_schema[base_name]['conc_debate_path'] = outpath
     with open('data/processed/file_schema.json', 'w') as f:
         json.dump(file_schema, f, indent=4)
 
-
-
 def collect_all_debates(file_schema, outdir='data/processed/debates/'):
+    """
+    Collect and concatenate all debates based on the file schema.
+
+    Args:
+        file_schema (dict): File schema dictionary.
+        outdir (str): Output directory to save the concatenated debate texts.
+
+    Returns:
+        None
+    """
     for base_name in tqdm(file_schema.keys(), desc='Collecting debates', colour='green'):
         collect_debate(base_name, file_schema, outdir=outdir)
 
 def get_date_from_base_name(base_name):
+    """
+    Extract the date from the base name of a debate file.
+
+    Args:
+        base_name (str): Base name of the debate file.
+
+    Returns:
+        str: Date in the format 'YYYY-MM-DD'.
+    """
     year, month, day, debate_num = re.findall(r'\d+', base_name)
     return f"{year}-{month}-{day}"

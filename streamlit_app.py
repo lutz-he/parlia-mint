@@ -4,27 +4,10 @@ from datetime import datetime
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+import altair as alt
 
 # Set page layout to wide
 st.set_page_config(layout="wide")
-
-# Custom CSS to change the default red color to navy blue
-st.markdown(
-    """
-    <style>
-    .stSlider > div > div > div > div > div {
-        background: navy !important;
-    }
-    .stRadio > div > div > div > div > div {
-        background: navy !important;
-    }
-    .stDateInput > div > div > div > div > div {
-        background: navy !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 
 st.title("ParliaMint Prototype Dashboard")
 with st.expander("ℹ️ Disclaimer", expanded=False):
@@ -32,17 +15,26 @@ with st.expander("ℹ️ Disclaimer", expanded=False):
     st.markdown("Using the date slider, you can select a date range to view the topics discussed in the parliament.\nYou can also switch between daily and weekly views using the toggle switch.")
     st.markdown("The bar chart shows the probability of topics discussed in the parliament over the selected date range.")
     st.markdown("The bottom section shows the summary, top 5 speakers, and topics discussed for each debate on the a selected date.")
-    
 
 # Load data
 @st.cache_data
 def load_data(scaling_factor=0.8, name_topics=True):
+    """
+    Load and preprocess the debate topics data.
+
+    Args:
+        scaling_factor (float): Factor to scale down the probabilities.
+        name_topics (bool): Whether to assign random topic names.
+
+    Returns:
+        pd.DataFrame: Preprocessed debate topics data.
+    """
     df = pd.read_csv('data/processed/debate_topics.csv')
     
-    # This is a temporary solution to scale down the data, as the probabilities of the LDA model are too high
+    # Scale down the probabilities
     df["Probability"] = df["Probability"] * (scaling_factor + np.random.uniform(-0.1, 0.1))
 
-    # Again a temporary solution as the zero-shot-classifiation model did not work as expected for the candidate topics
+    # Assign random topic names
     if name_topics:
         num_topics = df['Topic'].nunique()
         random_topic_names = ["security", "geopolitics", "technologies", "energy", "crime", "climate", "defence"]
@@ -86,7 +78,6 @@ view_mode = st.radio(
     key='view_mode_toggle'
 )
 
-
 ### Filter Data
 
 # Filter data based on date range
@@ -95,6 +86,16 @@ filtered_data['Date'] = pd.to_datetime(filtered_data['Date'])
 
 # Add a new column 'Date_dist' to distribute topics equally over the day
 def distribute_topics(df, mode=view_mode.lower()):
+    """
+    Distribute topics equally over the day or week.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing the debate topics data.
+        mode (str): Mode of distribution ('daily' or 'weekly').
+
+    Returns:
+        pd.DataFrame: DataFrame with the 'Date_dist' column added.
+    """
     if mode == 'daily':
         df['Date_dist'] = df['Date']
         unique_dates = df['Date'].unique()
@@ -114,7 +115,7 @@ def distribute_topics(df, mode=view_mode.lower()):
             df.loc[week_mask, 'Date_dist'] = df.loc[week_mask, 'Week'] + pd.to_timedelta(days_to_add, unit='d')
         return df
 
-
+# Apply the distribution based on the selected view mode
 if view_mode == 'Weekly':
     filtered_data['Week'] = filtered_data['Date'].dt.to_period('W').apply(lambda r: r.start_time)
     filtered_data = filtered_data.groupby(['Week', 'Topic'], as_index=False).max().sort_values(['Week', 'Topic'])
@@ -126,18 +127,14 @@ else:
     x_axis = alt.X('Date_dist:T', axis=alt.Axis(title='Date', format='%b %d', labelAngle=-45))
 
 ### CHARTS
-# Create the bars chart
 
-
-# Assuming 'filtered_data' is your DataFrame
+# Create the bar and scatter plot using Plotly
 fig = go.Figure()
-
-# Define a color map for distinct topic colors
 color_map = px.colors.qualitative.Plotly
 
 for i, topic in enumerate(filtered_data['Topic'].unique()):
     topic_data = filtered_data[filtered_data['Topic'] == topic]
-    # add bars
+    # Add bars
     fig.add_trace(go.Bar(
         x=topic_data['Date_dist'],
         y=topic_data['Probability'],
@@ -172,7 +169,6 @@ for i, topic in enumerate(filtered_data['Topic'].unique()):
 
 fig.update_layout(
     title='Which of the relevant topics are discussed in the parliament?',
-
     annotations=[
         dict(
             text="Data Source: ParliaMint",
@@ -202,15 +198,27 @@ fig.update_layout(
 st.plotly_chart(fig)
 
 ##### Bottom Page
-# Load summarise.csv
+# Load summaries.csv
 @st.cache_data
 def load_summary_data():
+    """
+    Load the summaries data.
+
+    Returns:
+        pd.DataFrame: Summaries data.
+    """
     data = pd.read_csv('data/processed/summaries.csv')
     data['date'] = pd.to_datetime(data['date'])
     return data
 
 @st.cache_data
 def load_speaker_count_data():
+    """
+    Load the speaker count data.
+
+    Returns:
+        pd.DataFrame: Speaker count data.
+    """
     data = pd.read_csv('data/processed/speaker_count.csv')
     data['Date'] = pd.to_datetime(data['Date'])
     return data
@@ -249,7 +257,7 @@ unique_debate_nums = filtered_summary_data['debate_num'].unique()
 
 for debate_num in unique_debate_nums:
     debate_data = filtered_summary_data[filtered_summary_data['debate_num'] == debate_num]
-    debate_data_speakers = filtered_speaker_count_data[filtered_speaker_count_data['Debate_Num'] == debate_num]
+    debate_data_speakers = filtered_speaker_count_data[speaker_count_data['Debate_Num'] == debate_num]
     debate_data_topics = filtered_topic_data[filtered_topic_data['Debate_Num'] == debate_num]
     
     with st.expander(f"**Debate Number: {debate_num}** | {debate_data['chamber'].values[0].capitalize()}", expanded=True):
