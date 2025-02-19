@@ -140,3 +140,6 @@ def collect_all_debates(file_schema, outdir='data/processed/debates/'):
     for base_name in tqdm(file_schema.keys(), desc='Collecting debates', colour='green'):
         collect_debate(base_name, file_schema, outdir=outdir)
 
+def get_date_from_base_name(base_name):
+    year, month, day, debate_num = re.findall(r'\d+', base_name)
+    return f"{year}-{month}-{day}"
