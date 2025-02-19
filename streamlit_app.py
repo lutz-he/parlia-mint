@@ -115,29 +115,63 @@ else:
 
 ### CHARTS
 # Create the bars chart
-sneaky_bars = alt.Chart(filtered_data).mark_bar(size=2).encode(
-    x=x_axis,
-    y=alt.Y('Probability:Q', axis=alt.Axis(title='Probability'), scale=alt.Scale(domain=[0, 1])),
-    color='Topic:N',
-    opacity=alt.Opacity('Probability:Q', scale=alt.Scale(domain=[0.5, 1], range=[0.01, 0.7]))
-).interactive()
+import plotly.express as px
+import plotly.graph_objects as go
+from streamlit_plotly_events import plotly_events
 
-sneaky_points = alt.Chart(filtered_data).mark_point(filled=True, size=50).encode(
-    x=x_axis,
-    y=alt.Y('Probability:Q', scale=alt.Scale(domain=[0, 1])),
-    color='Topic:N',
-    opacity=alt.Opacity('Probability:Q', scale=alt.Scale(domain=[0.5, 1], range=[0.01, 0.7]), legend=None),
-    tooltip=['Date:T', 'Probability:Q', 'Topic:N']
-).interactive()
+# Assuming 'filtered_data' is your DataFrame
+fig = go.Figure()
 
-chart = sneaky_bars + sneaky_points
+# Define a color map for distinct topic colors
+color_map = px.colors.qualitative.Plotly
 
-chart = chart.properties(
+for i, topic in enumerate(filtered_data['Topic'].unique()):
+    topic_data = filtered_data[filtered_data['Topic'] == topic]
+    # add bars
+    fig.add_trace(go.Bar(
+        x=topic_data['Date_dist'],
+        y=topic_data['Probability'],
+        name=topic,
+        showlegend=True,
+        width=.08,
+        marker=dict(
+            line=dict(color=color_map[i % len(color_map)], width=1),
+            color=color_map[i % len(color_map)],
+            opacity=topic_data['Probability'] * 0.8
+        ),
+        legendgroup=topic,
+        customdata=topic_data['Date'],
+        hovertemplate='Date: %{customdata}<br>Probability: %{y}<extra></extra>',
+    ))
+    # Add points
+    fig.add_trace(go.Scatter(
+        x=topic_data['Date_dist'],
+        y=topic_data['Probability'],
+        mode='markers',
+        name=topic,
+        marker=dict(
+            color=color_map[i % len(color_map)],
+            opacity=topic_data['Probability'] * 0.8,
+            size=10
+        ),
+        showlegend=False,
+        legendgroup=topic,
+        customdata=topic_data['Date'],
+        hovertemplate='Date: %{customdata}<br>Probability: %{y}<extra></extra>',
+    ))
+
+fig.update_layout(
     title='Topic Probabilities over Time',
-    height=500  
+    xaxis_title='Date',
+    yaxis_title='Probability',
+    height=500
 )
 
-st.altair_chart(chart, use_container_width=True)
-st.write(filtered_data)
+# Display the figure using st.plotly_chart
+st.plotly_chart(fig)
+
+
+##### Bottom Page
+
 
 
