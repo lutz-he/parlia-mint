@@ -1,0 +1,4 @@
+tranformers
+torch
+sentencepiece
+gradio

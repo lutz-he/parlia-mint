@@ -1,0 +1,5 @@
+/data/raw/subset/*
+data/raw/*
+!/data/raw/subset/
+data/processed/debates/*
+*.pyc
