@@ -10,6 +10,9 @@ Visualize the **prevalence of specific topics** in parliamentary debates over ti
 For a selected date (e.g. the user has identified a certain day, where a certain topic was debated) the dashboard features a **mini-summary for each debate** that took place on that day.
 
 
+> **Disclaimer**: This project is a prototype developed within 12 hours and is under active development. The current data base is the 2022 subset of the [ParlaMint parliamentary data of the Netherlands](https://www.clarin.si/repository/xmlui/handle/11356/1910). The current topic detection and generative text summarization models can be seen as placeholder models for demonstrative purposes only. See also the discussion below on further ideas and issues.
+
+
 ## How to use
 As this is a prototype, the usage instructions are subject to change based on ongoing evaluations and experiments.
 
@@ -44,9 +47,16 @@ Once the app is running, you can access it in your web browser at `http://localh
 
 ## Current Issues & Ideas
 
+#### data & models
+- Streamline application to other subsets of the data
+- Find and make work a zero-shot classifier for topic modelling on candidate topics
+- Evaluate and search for alternatives for summarization model
 
-
-
+#### streamlit app
+- Enable clickable events on the graph to subset date selection for debate summaries
+- Fix workaround "sneaky_bars" & "sneaky_points" (failed to dodge bars and points, so I tweaked the x-axis values depending on the grouping variable)
+- Work on design
+- Work on more intuitive UX
 
 
 ## Contributing
