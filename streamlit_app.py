@@ -147,8 +147,8 @@ for i, topic in enumerate(filtered_data['Topic'].unique()):
             opacity=topic_data['Probability'] * 0.8
         ),
         legendgroup=topic,
-        customdata=topic_data['Date'],
-        hovertemplate='Date: %{customdata}<br>Probability: %{y}<extra></extra>',
+        customdata=topic_data[['Date', 'Topic']],        
+        hovertemplate='Topic: %{customdata[1]}<br>Date: %{customdata[0]|%Y %b %d}<br>Probability: %{y:.2f}<extra></extra>',
     ))
     # Add points
     fig.add_trace(go.Scatter(
@@ -163,8 +163,8 @@ for i, topic in enumerate(filtered_data['Topic'].unique()):
         ),
         showlegend=False,
         legendgroup=topic,
-        customdata=topic_data['Date'],
-        hovertemplate='Date: %{customdata}<br>Probability: %{y}<extra></extra>',
+        customdata=topic_data[['Date', 'Topic']],
+        hovertemplate='Topic: %{customdata[1]}<br>Date: %{customdata[0]|%Y %b %d}<br>Probability: %{y:.2f}<extra></extra>',
     ))
 
 fig.update_layout(
